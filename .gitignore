@@ -1,0 +1,19 @@
+# Archivos de sistema
+.DS_Store
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Informes y logs
+reports/
+*.log
+*.csv
+*.txt
+*.html
+# Entornos virtuales
+venv/
+.env/
+# Otros
+*.swp
+*.swo

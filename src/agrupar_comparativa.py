@@ -5,9 +5,11 @@ from pathlib import Path
 from collections import defaultdict
 
 REPORTS_DIR = Path("reports")
+COMPARATIVAS_DIR = Path("comparativas")
+COMPARATIVAS_DIR.mkdir(exist_ok=True)
 
 # Encuentra todos los archivos resumen.csv en subcarpetas de reports
-csv_files = sorted(REPORTS_DIR.glob("test_red_*/resumen.csv"))
+csv_files = sorted(REPORTS_DIR.glob("*_*/resumen.csv"))
 
 # Diccionario: {nombre_test: {nombre_report: (tx, rx)}}
 all_results = defaultdict(dict)
@@ -28,7 +30,7 @@ for csv_file in csv_files:
 tests = sorted(all_results.keys())
 
 # Crear CSV agrupado
-output_csv = REPORTS_DIR / "comparativa_reports.csv"
+output_csv = COMPARATIVAS_DIR / "comparativa_reports.csv"
 with open(output_csv, "w", newline="") as f:
     writer = csv.writer(f)
     header = ["Prueba"]

@@ -6,7 +6,11 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 REPORTS_DIR = Path("reports")
-csv_files = sorted(REPORTS_DIR.glob("test_red_*/resumen.csv"))
+# Cambia la carpeta de salida de comparativas
+COMPARATIVAS_DIR = Path("comparativas")
+COMPARATIVAS_DIR.mkdir(exist_ok=True)
+
+csv_files = sorted(REPORTS_DIR.glob("*_*/resumen.csv"))
 
 all_results = defaultdict(dict)
 report_names = []
@@ -25,7 +29,7 @@ for csv_file in csv_files:
 tests = sorted(all_results.keys())
 
 # Crear gráfico comparativo para cada test
-output_dir = REPORTS_DIR / "comparativas"
+output_dir = COMPARATIVAS_DIR
 output_dir.mkdir(exist_ok=True)
 
 for test in tests:

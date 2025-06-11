@@ -8,10 +8,19 @@ fi
 clear
 
 SERVER_IP="192.168.100.1"
+
+# Obtener nombre base para la carpeta de resultados
+if [[ -n "$1" && "$1" != --* ]]; then
+    TEST_NAME="$1"
+    shift
+else
+    TEST_NAME="test_red"
+fi
+
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RAND_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)
 REPORTS_DIR="reports"
-OUTPUT_DIR="$REPORTS_DIR/test_red_${TIMESTAMP}_${RAND_ID}"
+OUTPUT_DIR="$REPORTS_DIR/${TEST_NAME}_${TIMESTAMP}_${RAND_ID}"
 
 OPEN_HTML=false
 INTERFACE=""
@@ -75,6 +84,11 @@ while [[ $# -gt 0 ]]; do
     esac
 
 done
+
+# Activar entorno virtual si existe
+if [ -f "venv/bin/activate" ]; then
+    source "venv/bin/activate"
+fi
 
 # Validar conectividad con ping con reintentos
 success=false
@@ -202,10 +216,16 @@ STEP=$((STEP+1))
 python3 "$PWD/src/parse_iperf_report.py" "$LOG_FILE" "$OUTPUT_DIR"
 python3 "$PWD/src/parse_iperf_report_html.py" "$LOG_FILE" "$OUTPUT_DIR" "$SERVER_IP" "$INTERFACE" "$INTERFACE_IP"
 
+# Actualizar comparativas globales
+python3 "$PWD/src/agrupar_comparativa.py"
+python3 "$PWD/src/agrupar_comparativa_graficos.py"
+
 # Mostrar rutas de los informes generados
 echo "✅ Resumen TXT: $OUTPUT_DIR/resumen.txt"
 echo "✅ Resumen CSV: $OUTPUT_DIR/resumen.csv"
 echo "✅ Informe HTML: $OUTPUT_DIR/informe.html"
+echo "✅ Comparativa global CSV: reports/comparativa_reports.csv"
+echo "✅ Gráficos comparativos: reports/comparativas/"
 
 # Abrir automáticamente el informe en macOS
 if [[ "$OSTYPE" == "darwin"* && "$OPEN_HTML" == true ]]; then
@@ -217,3 +237,13 @@ total_time=${SECONDS:-0}
 mins=$((total_time/60))
 secs=$((total_time%60))
 printf $'⏱️  Tiempo total: %dm %ds (%d segundos)\n' "$mins" "$secs" "$total_time"
+
+# Desactivar entorno virtual si estaba activo
+if [[ -n "$VIRTUAL_ENV" ]]; then
+    deactivate
+fi
+# Mostrar mensaje final
+echo -e "\n\n🎉 Pruebas de red completadas. ¡Gracias por usar NetworkSpeedtest.sh!\n
+Puedes encontrar los informes en la carpeta '$OUTPUT_DIR'.\n"
+# Fin del script
+echo "Si tienes alguna sugerencia o mejora, ¡no dudes en contribuir al proyecto!"

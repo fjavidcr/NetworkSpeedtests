@@ -17,8 +17,9 @@ Scripts para automatizar y analizar pruebas de velocidad de red usando `iperf3` 
 ## Uso rápido
 ```sh
 chmod +x NetworkSpeedtest.sh
-./NetworkSpeedtest.sh --interface <IFACE> [opciones]
+./NetworkSpeedtest.sh [nombre_test] --interface <IFACE> [opciones]
 ```
+Si no se pasa [nombre_test], se usará 'test_red' por defecto.
 
 ### Opciones principales
 - `--interface`, `-i <IFACE>`: Interfaz de red a usar (obligatorio, ej: eth0, en0)
@@ -29,7 +30,7 @@ chmod +x NetworkSpeedtest.sh
 
 ### Ejemplo
 ```sh
-./NetworkSpeedtest.sh --interface en0 --open-html
+./NetworkSpeedtest.sh cable-cat6a --interface en0 --open-html
 ```
 
 Los resultados se guardan en una carpeta `reports/` con subcarpetas por fecha y hora.
@@ -68,6 +69,22 @@ Este sistema de pruebas requiere dos equipos:
 - **Cliente:** Ejecuta el script `NetworkSpeedtest.sh`, realiza las pruebas de velocidad y genera los informes. El cliente se conecta al servidor usando la IP configurada en el script.
 
 Asegúrate de que ambos equipos tengan conectividad de red entre sí y que el puerto de iperf3 (por defecto 5201) esté abierto.
+
+## Entorno virtual para Python
+Se recomienda usar un entorno virtual para instalar las dependencias necesarias para los scripts de análisis y generación de gráficos.
+
+### Crear y activar el entorno virtual
+```sh
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### Instalar dependencias
+```sh
+pip install -r requirements.txt
+```
+
+Esto instalará automáticamente `matplotlib` y cualquier otra dependencia necesaria para los scripts de análisis y comparativa.
 
 ## Licencia
 MIT

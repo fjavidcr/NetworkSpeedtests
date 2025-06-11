@@ -47,10 +47,27 @@ python3 parse_iperf_report.py <ruta/speedtest.log> [output_dir]
 python3 parse_iperf_report_html.py <ruta/speedtest.log> [output_dir] [server_ip] [interface] [interface_ip]
 ```
 
+## Ejecución en el servidor (iperf3)
+Antes de lanzar las pruebas, asegúrate de que el servidor iperf3 esté escuchando. En el equipo destino ejecuta:
+
+```sh
+iperf3 -s
+```
+
+Esto dejará el servidor iperf3 escuchando para las pruebas TCP y UDP en el puerto 5201 por defecto.
+
 ## Notas
 - El script detecta automáticamente la IP de la interfaz.
 - Si usas macOS, el informe HTML se abre automáticamente con `--open-html`.
 - El servidor iperf3 debe estar corriendo en la IP configurada en el script (`SERVER_IP`).
+
+## Arquitectura: Cliente y Servidor
+Este sistema de pruebas requiere dos equipos:
+
+- **Servidor:** Ejecuta `iperf3` en modo escucha. Es el equipo destino al que se conectan las pruebas. Debe estar en la red y accesible desde el cliente.
+- **Cliente:** Ejecuta el script `NetworkSpeedtest.sh`, realiza las pruebas de velocidad y genera los informes. El cliente se conecta al servidor usando la IP configurada en el script.
+
+Asegúrate de que ambos equipos tengan conectividad de red entre sí y que el puerto de iperf3 (por defecto 5201) esté abierto.
 
 ## Licencia
 MIT

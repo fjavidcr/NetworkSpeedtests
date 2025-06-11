@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 import re
 import sys
-import csv
 from pathlib import Path
 from datetime import datetime
 
+# Etiquetas adaptadas a los nuevos tests del script bash
 default_labels = [
-    "TCP básico",
-    "TCP prolongado",
-    "TCP múltiples flujos",
-    "TCP bidireccional",
+    "TCP básico (sencillo)",
+    "TCP medio (4 flujos)",
+    "TCP medio (8 flujos)",
+    "TCP alta (16 flujos)",
+    "TCP bidireccional alta",
     "UDP 2.5G"
 ]
 
 def parse_section(section, label):
-    if label == "TCP múltiples flujos":
+    if "medio (4 flujos)" in label or "medio (8 flujos)" in label or "alta (16 flujos)" in label:
         tx = last_value(section, r"\[SUM\].*sender")
         rx = last_value(section, r"\[SUM\].*receiver")
-    elif label == "UDP 2.5G":
+    elif "UDP" in label:
         tx = last_value(section, r"sender")
         rx = last_value(section, r"receiver")
-    elif label == "TCP bidireccional":
+    elif "bidireccional" in label:
         tx = last_value(section, r"\[TX-C\].*sender")
         rx = last_value(section, r"\[RX-C\].*sender")
     else:

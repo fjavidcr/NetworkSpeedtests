@@ -4,24 +4,25 @@ import sys
 import csv
 from pathlib import Path
 
-# Configuración: puedes cambiar estos nombres si lo deseas
+# Nuevos labels según los tests del script bash
 default_labels = [
-    "TCP básico",
-    "TCP prolongado",
-    "TCP múltiples flujos",
-    "TCP bidireccional",
+    "TCP básico (sencillo)",
+    "TCP medio (4 flujos)",
+    "TCP medio (8 flujos)",
+    "TCP alta (16 flujos)",
+    "TCP bidireccional alta",
     "UDP 2.5G"
 ]
 
 def parse_section(section, label):
     # Busca la última línea relevante para cada tipo de test
-    if label == "TCP múltiples flujos":
+    if "medio (4 flujos)" in label or "medio (8 flujos)" in label or "alta (16 flujos)" in label:
         tx = last_value(section, r"\[SUM\].*sender")
         rx = last_value(section, r"\[SUM\].*receiver")
-    elif label == "UDP 2.5G":
+    elif "UDP" in label:
         tx = last_value(section, r"sender")
         rx = last_value(section, r"receiver")
-    elif label == "TCP bidireccional":
+    elif "bidireccional" in label:
         tx = last_value(section, r"\[TX-C\].*sender")
         rx = last_value(section, r"\[RX-C\].*sender")
     else:
@@ -33,7 +34,6 @@ def last_value(section, pattern):
     # Busca la última línea que coincide y extrae el valor de Gbits/sec
     matches = [line for line in section if re.search(pattern, line)]
     if matches:
-        # Busca el valor antes de 'Gbits/sec' o 'Mbits/sec'
         m = re.search(r"([0-9.]+)\s+(Gbits|Mbits)/sec", matches[-1])
         if m:
             val = float(m.group(1))
@@ -91,9 +91,9 @@ def write_csv(results, csvfile):
 def write_txt(results, avg_rtt, udp_loss, txtfile):
     with open(txtfile, "w") as f:
         f.write("========== RESUMEN ==========" + "\n")
-        f.write(f"{'Prueba':<25}{'TX (Gbps)':>12}{'RX (Gbps)':>12}\n")
+        f.write(f"{'Prueba':<30}{'TX (Gbps)':>12}{'RX (Gbps)':>12}\n")
         for label, (tx, rx) in results.items():
-            f.write(f"{label:<25}{tx:>12}{rx:>12}\n")
+            f.write(f"{label:<30}{tx:>12}{rx:>12}\n")
         f.write(f"\n📶 Latencia promedio: {avg_rtt} ms\n")
         f.write(f"📉 Pérdida de paquetes UDP: {udp_loss}\n")
 

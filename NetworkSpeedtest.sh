@@ -147,7 +147,7 @@ show_progress() {
 }
 
 # Definir número de pasos totales (ping + 5 tests iperf3)
-TOTAL_STEPS=6
+TOTAL_STEPS=7
 STEP=1
 
 # Mostrar barra al inicio (0%)
@@ -173,60 +173,34 @@ echo "" | tee -a "$LOG_FILE"
 show_progress $STEP $TOTAL_STEPS
 STEP=$((STEP+1))
 
-# iperf3 tests
-run_test "TCP básico" "iperf3 -c $SERVER_IP -B $INTERFACE_IP"
+# Pruebas sencillas
+run_test "TCP básico (sencillo)" "iperf3 -c $SERVER_IP -B $INTERFACE_IP -P 1 -w 256K"
 show_progress $STEP $TOTAL_STEPS
 STEP=$((STEP+1))
-run_test "TCP prolongado" "iperf3 -c $SERVER_IP -t 30 -B $INTERFACE_IP"
+
+# Pruebas intensidad media
+run_test "TCP medio (4 flujos)" "iperf3 -c $SERVER_IP -B $INTERFACE_IP -P 4 -w 512K"
 show_progress $STEP $TOTAL_STEPS
 STEP=$((STEP+1))
-run_test "TCP múltiples flujos" "iperf3 -c $SERVER_IP -P 4 -B $INTERFACE_IP"
+run_test "TCP medio (8 flujos)" "iperf3 -c $SERVER_IP -B $INTERFACE_IP -P 8 -w 1M"
 show_progress $STEP $TOTAL_STEPS
 STEP=$((STEP+1))
-run_test "TCP bidireccional" "iperf3 -c $SERVER_IP --bidir -B $INTERFACE_IP"
+
+# Pruebas intensidad alta
+run_test "TCP alta (16 flujos)" "iperf3 -c $SERVER_IP -B $INTERFACE_IP -P 16 -w 4M"
+show_progress $STEP $TOTAL_STEPS
+STEP=$((STEP+1))
+run_test "TCP bidireccional alta" "iperf3 -c $SERVER_IP --bidir -B $INTERFACE_IP -P 8 -w 2M"
 show_progress $STEP $TOTAL_STEPS
 STEP=$((STEP+1))
 run_test "UDP 2.5G" "iperf3 -c $SERVER_IP -u -b 2.5G -t 10 --get-server-output -B $INTERFACE_IP"
 show_progress $STEP $TOTAL_STEPS
 STEP=$((STEP+1))
 
-# CSV
-#echo "Prueba,Envío (TX) Gbps,Recepción (RX) Gbps" > "$CSV_FILE"
-
-# --- ELIMINADO: extract_and_save y llamadas ---
-#extract_and_save() {
-#    ...
-#}
-#extract_and_save "TCP básico" "▶️ TCP básico"
-#extract_and_save "TCP prolongado" "▶️ TCP prolongado"
-#extract_and_save "TCP múltiples flujos" "▶️ TCP múltiples flujos"
-#extract_and_save "TCP bidireccional" "▶️ TCP bidireccional"
-#extract_and_save "UDP 2.5G" "▶️ UDP 2.5G"
-
-# --- ELIMINADO: UDP Loss y generación manual de resumenes ---
-#udp_loss_line=$(awk '/▶️ UDP 2.5G/,/receiver/ { if (/receiver/ && /datagrams/) print }' "$LOG_FILE" | head -n1)
-#if [[ -n "$udp_loss_line" ]]; then
-#    # Extraer perdidos y totales del receiver
-#    lost=$(echo "$udp_loss_line" | sed -n 's/.* \([0-9]+\)\/[0-9]+ (\([0-9.]*\)%).*/\1/p')
-#    total=$(echo "$udp_loss_line" | sed -n 's/.*\/[0-9]+ (\([0-9.]*\)%).*/\1/p')
-#    percent=$(echo "$udp_loss_line" | sed -n 's/.*(\([0-9.]*\)%).*/\1/p')
-#    # Si no se pudo extraer, usar método alternativo
-#    if [[ -z "$percent" ]]; then
-#        # Buscar la forma X/Y (Z%)
-#        percent=$(echo "$udp_loss_line" | sed -n 's/.*(\([0-9.]*\)%).*/\1/p')
-#    fi
-#    if [[ -n "$percent" ]]; then
-#        udp_loss="$percent%"
-#    else
-#        udp_loss="N/A"
-#    fi
-#else
-#    udp_loss="N/A"
-#fi
 
 # Generar informes con Python (CSV, TXT, HTML con gráficos)
-python3 "$PWD/parse_iperf_report.py" "$LOG_FILE" "$OUTPUT_DIR"
-python3 "$PWD/parse_iperf_report_html.py" "$LOG_FILE" "$OUTPUT_DIR" "$SERVER_IP" "$INTERFACE" "$INTERFACE_IP"
+python3 "$PWD/src/parse_iperf_report.py" "$LOG_FILE" "$OUTPUT_DIR"
+python3 "$PWD/src/parse_iperf_report_html.py" "$LOG_FILE" "$OUTPUT_DIR" "$SERVER_IP" "$INTERFACE" "$INTERFACE_IP"
 
 # Mostrar rutas de los informes generados
 echo "✅ Resumen TXT: $OUTPUT_DIR/resumen.txt"

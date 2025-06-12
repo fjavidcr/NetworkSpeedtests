@@ -36,6 +36,10 @@ mkdir -p "$REPORTS_DIR"
 # Procesar argumentos
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --server-ip|-s)
+            SERVER_IP="$2"
+            shift 2
+            ;;
         --open-html|-O)
             OPEN_HTML=true
             shift
@@ -69,11 +73,12 @@ while [[ $# -gt 0 ]]; do
             echo "Uso: $0 [opciones]"
             echo ""
             echo "Opciones disponibles:"
-            echo "  --open-html, -O      Abre automáticamente el informe HTML"
-            echo "  --interface, -i IFACE Usa la interfaz de red especificada (ej: eth0)"
-            echo "  --ping-retries N      Número de reintentos de ping (por defecto: 3)"
-            echo "  --ping-wait SEG      Segundos de espera entre reintentos de ping (por defecto: 2)"
-            echo "  --help, -h           Muestra esta ayuda"
+            echo "  --server-ip, -s IP     IP del servidor iperf3 (por defecto: 192.168.100.1)"
+            echo "  --open-html, -O        Abre automáticamente el informe HTML"
+            echo "  --interface, -i IFACE  Usa la interfaz de red especificada (ej: eth0)"
+            echo "  --ping-retries N       Número de reintentos de ping (por defecto: 3)"
+            echo "  --ping-wait SEG        Segundos de espera entre reintentos de ping (por defecto: 2)"
+            echo "  --help, -h             Muestra esta ayuda"
             exit 0
             ;;
         *)

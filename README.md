@@ -21,19 +21,22 @@ chmod +x NetworkSpeedtest.sh
 ```
 Si no se pasa [nombre_test], se usará 'test_red' por defecto.
 
-### Opciones principales
-- `--interface`, `-i <IFACE>`: Interfaz de red a usar (obligatorio, ej: eth0, en0)
-- `--open-html`, `-O`: Abre automáticamente el informe HTML al finalizar (solo macOS)
-- `--ping-retries <N>`: Número de reintentos de ping (por defecto: 3)
-- `--ping-wait <SEG>`: Segundos de espera entre reintentos de ping (por defecto: 2)
-- `--help`, `-h`: Muestra la ayuda
+## Parámetros principales
 
-### Ejemplo
-```sh
-./NetworkSpeedtest.sh cable-cat6a --interface en0 --open-html
+- `--server-ip IP`, `-s IP`: Especifica la IP del servidor iperf3 al que se conectarán las pruebas. Por defecto es `192.168.100.1`.
+- `--interface IFACE`, `-i IFACE`: Especifica la interfaz de red local a usar (ejemplo: eth0). **Obligatorio.**
+- `--open-html`, `-O`: Abre automáticamente el informe HTML generado al finalizar (solo macOS).
+- `--ping-retries N`: Número de reintentos de ping antes de abortar (por defecto: 3).
+- `--ping-wait SEG`: Segundos de espera entre reintentos de ping (por defecto: 2).
+- `--help`, `-h`: Muestra la ayuda y opciones disponibles.
+
+### Ejemplo de uso
+
+```bash
+./NetworkSpeedtest.sh mi_test --server-ip 10.0.0.2 --interface en0 --open-html
 ```
 
-Los resultados se guardan en una carpeta `reports/` con subcarpetas por fecha y hora.
+Esto ejecutará las pruebas con nombre "mi_test" contra el servidor 10.0.0.2 usando la interfaz en0 y abrirá el informe HTML al finalizar.
 
 ## Informes generados
 - `speedtest.log`: Log completo de la prueba

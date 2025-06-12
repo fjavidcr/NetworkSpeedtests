@@ -219,6 +219,10 @@ python3 "$PWD/src/parse_iperf_report_html.py" "$LOG_FILE" "$OUTPUT_DIR" "$SERVER
 # Actualizar comparativas globales
 python3 "$PWD/src/agrupar_comparativa.py"
 python3 "$PWD/src/agrupar_comparativa_graficos.py"
+python3 "$PWD/src/agrupar_comparativa_html.py"
+echo "✅ Comparativa global CSV: comparativas/comparativa_reports.csv"
+echo "✅ Gráficos comparativos: comparativas/"
+echo "✅ Comparativa HTML: comparativas/comparativa_reports.html"
 
 # Mostrar rutas de los informes generados
 echo "✅ Resumen TXT: $OUTPUT_DIR/resumen.txt"

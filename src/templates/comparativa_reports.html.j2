@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Comparativa de Tests de Red</title>
+    <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+    <script src='https://www.kryogenix.org/code/browser/sorttable/sorttable.js'></script>
+    <style>
+        body { font-family: sans-serif; background: #f5f5f5; padding: 20px; }
+        h1 { color: #333; }
+        table { border-collapse: collapse; width: 100%; background: #fff; margin-bottom: 30px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background: #eee; cursor:pointer; }
+        tr:hover { background: #f0f8ff; }
+        caption { font-size: 1.2em; margin-bottom: 10px; }
+        .summary { margin-bottom: 30px; background: #e8f4ff; padding: 10px; border-radius: 6px; }
+        .test-block { margin-bottom: 40px; }
+        .test-title { font-size: 1.1em; margin: 10px 0 5px 0; color: #222; }
+        .stats-table th, .stats-table td { font-size: 0.95em; }
+        .cell-green { background: #c8f7c5; }
+        .cell-yellow { background: #fff9c4; }
+        .cell-red { background: #ffcdd2; }
+        .cell-na { background: #eeeeee; color: #aaa; }
+        .filter-controls { margin-bottom: 20px; }
+        .details-modal { display:none; position:fixed; top:20%; left:50%; transform:translate(-50%,0); background:white; border:2px solid #2196f3; border-radius:8px; padding:20px; z-index:1000; box-shadow:0 4px 24px #0002; }
+        .modal-close { float:right; cursor:pointer; color:#2196f3; font-size:1.2em; }
+        #overlay { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.2); z-index:999; }
+    </style>
+</head>
+<body>
+    <h1>Comparativa de Tests de Red</h1>
+    <div class='summary'>
+        <b>Generado:</b> {{ fecha_generado }}<br>
+        <b>Total de ejecuciones:</b> {{ report_names|length }}<br>
+        <b>Total de tests comparados:</b> {{ tests|length }}<br>
+    </div>
+    <table class='sortable' id='mainTable'>
+        <caption>Gbps por test y ejecución</caption>
+        <tr>
+            <th>Prueba</th>
+            {% for name in report_names %}
+                <th>{{ name }} TX</th><th>{{ name }} RX</th>
+            {% endfor %}
+        </tr>
+        {% for test in tests %}
+        <tr data-test='{{ test }}'>
+            <td>{{ test }}</td>
+            {% for name in report_names %}
+                {% set tx, rx = all_results[test].get(name, ("N/A", "N/A")) %}
+                <td class="{{ color_class(tx) }}" data-exec="{{ name }}" onclick='showDetails({{ details_json(test, name, tx, rx) }})'>{{ tx }}</td>
+                <td class="{{ color_class(rx) }}" data-exec="{{ name }}" onclick='showDetails({{ details_json(test, name, tx, rx) }})'>{{ rx }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    <div id='overlay'></div>
+    <div class='details-modal' id='detailsModal'>
+        <span class='modal-close' onclick='closeDetails()'>&#10006;</span>
+        <div id='modalContent'></div>
+    </div>
+    <h2>Resumen global (media de todos los tests por ejecución)</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; margin-bottom: 32px;">
+        <div style="flex:1 1 340px; max-width: 50%; min-width: 320px;">
+            <canvas id='globalChart' width='420' height='260' style="display:block; max-width:100%; height:260px; max-height:260px;"></canvas>
+        </div>
+        <div style="flex:1 1 260px; min-width: 220px; background: #f5f5f5; border-radius: 10px; box-shadow: 0 2px 12px #0001; padding: 18px 22px; font-size:1.05em;">
+            <b>Datos globales:</b><br>
+            <ul style="margin:10px 0 0 18px; padding:0; list-style: disc;">
+                <li><b>Total de ejecuciones:</b> {{ report_names|length }}</li>
+                <li><b>Total de tests:</b> {{ tests|length }}</li>
+                <li><b>Media global TX:</b> {{ global_avg_tx|default('N/A') }} Gbps</li>
+                <li><b>Media global RX:</b> {{ global_avg_rx|default('N/A') }} Gbps</li>
+            </ul>
+        </div>
+    </div>
+    <h2>Análisis automático de la red 2,5G</h2>
+    <div style="background:#fffbe7; border-radius:8px; box-shadow:0 2px 8px #0001; padding:18px 22px; margin-bottom:32px; font-size:1.08em;">
+        {% set tx = global_avg_tx or 0 %}
+        {% set rx = global_avg_rx or 0 %}
+        {% if tx >= 2.3 and rx >= 2.3 %}
+            <b>✅ La red cumple con los estándares de una red 2,5G.</b> El rendimiento medio observado es excelente (TX: {{ global_avg_tx }} Gbps, RX: {{ global_avg_rx }} Gbps), lo que indica que la infraestructura soporta correctamente el caudal esperado para 2,5G.
+        {% elif tx >= 2.0 and rx >= 2.0 %}
+            <b>⚠️ La red se acerca al rendimiento esperado para 2,5G.</b> El caudal medio (TX: {{ global_avg_tx }} Gbps, RX: {{ global_avg_rx }} Gbps) es bueno, aunque podría haber margen de mejora. Revise cables, switches o configuraciones si se requiere el máximo rendimiento.
+        {% else %}
+            <b>❌ El rendimiento está por debajo de lo esperado para una red 2,5G.</b> El caudal medio (TX: {{ global_avg_tx }} Gbps, RX: {{ global_avg_rx }} Gbps) es bajo. Se recomienda revisar la infraestructura, cables, tarjetas de red o configuración de los equipos.
+        {% endif %}
+        <br><br>
+        {% if max_var_tx > 0.2 or max_var_rx > 0.2 %}
+            <b>Estabilidad:</b> Se observa cierta variabilidad en los resultados entre tests y ejecuciones (variación máxima TX: {{ max_var_tx }} Gbps, RX: {{ max_var_rx }} Gbps). Esto puede indicar fluctuaciones en la red o congestión puntual.
+        {% else %}
+            <b>Estabilidad:</b> Los resultados son estables entre tests y ejecuciones (variación máxima TX: {{ max_var_tx }} Gbps, RX: {{ max_var_rx }} Gbps), lo que indica una red consistente.
+        {% endif %}
+        <br><br>
+        {% set udp_loss = false %}
+        {% for name in report_names %}
+            {% set d = report_details[name] %}
+            {% if d['perdida'] and d['perdida']|float > 0 %}
+                {% set udp_loss = true %}
+            {% endif %}
+        {% endfor %}
+        {% if udp_loss %}
+            <b>Pérdida UDP:</b> Se han detectado pérdidas de paquetes UDP en alguna de las pruebas. Esto puede afectar a aplicaciones sensibles a la pérdida de datos.
+        {% else %}
+            <b>Pérdida UDP:</b> No se han detectado pérdidas de paquetes UDP significativas.
+        {% endif %}
+    </div>
+    <h2>Detalle por test</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 32px;">
+    {% for test in tests %}
+    <div class="test-block" style="background: #fff; border-radius: 10px; box-shadow: 0 2px 12px #0001; padding: 20px; width: 100%; max-width: 420px; margin-bottom: 24px;">
+        <div class="test-title" style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size:1.3em;">🔬</span> {{ test }}
+        </div>
+        <table class="stats-table" style="margin: 12px 0 18px 0; width: 100%;">
+            <tr style="background:#f5f5f5;">
+                <th></th>
+                <th style="color:#2196f3;">TX <span style="font-size:0.9em;">(Gbps)</span></th>
+                <th style="color:#e91e63;">RX <span style="font-size:0.9em;">(Gbps)</span></th>
+            </tr>
+            <tr>
+                <td style="font-weight:bold;">Mínimo</td>
+                <td style="background:#e3f2fd;">{{ stats[test]['min_tx'] }}</td>
+                <td style="background:#fce4ec;">{{ stats[test]['min_rx'] }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight:bold;">Máximo</td>
+                <td style="background:#e3f2fd;">{{ stats[test]['max_tx'] }}</td>
+                <td style="background:#fce4ec;">{{ stats[test]['max_rx'] }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight:bold;">Media</td>
+                <td style="background:#bbdefb; font-weight:bold;">{{ stats[test]['avg_tx'] }}</td>
+                <td style="background:#f8bbd0; font-weight:bold;">{{ stats[test]['avg_rx'] }}</td>
+            </tr>
+        </table>
+        <canvas id='chart_{{ test|replace(" ", "_")|replace("(", "")|replace(")", "")|replace("/", "_")|replace(".", "")|replace(",", "")|replace(":", "")|replace("-", "")|replace("á", "a")|replace("é", "e")|replace("í", "i")|replace("ó", "o")|replace("ú", "u")|replace("ü", "u")|replace("ñ", "n")|replace("Á", "A")|replace("É", "E")|replace("Í", "I")|replace("Ó", "O")|replace("Ú", "U")|replace("Ü", "U")|replace("Ñ", "N") }}' style="margin:0 auto; display:block; width:100%; max-height:300px; height:300px;" height="300"></canvas>
+    </div>
+    {% endfor %}
+    </div>
+<script>
+const reportNames = {{ report_names|tojson }};
+const tests = {{ tests|tojson }};
+const allResults = {{ all_results|tojson }};
+const reportDetails = {{ report_details|tojson }};
+const stats = {{ stats|tojson }};
+// Gráfico global
+const globalCtx = document.getElementById('globalChart').getContext('2d');
+const mediasTX = reportNames.map(name => {
+    let sum = 0, count = 0;
+    for (let t of tests) {
+        let v = allResults[t][name][0];
+        if (v !== 'N/A') { sum += parseFloat(v); count++; }
+    }
+    return count ? sum/count : 0;
+});
+const mediasRX = reportNames.map(name => {
+    let sum = 0, count = 0;
+    for (let t of tests) {
+        let v = allResults[t][name][1];
+        if (v !== 'N/A') { sum += parseFloat(v); count++; }
+    }
+    return count ? sum/count : 0;
+});
+new Chart(globalCtx, {
+    type: 'bar',
+    data: {
+        labels: reportNames,
+        datasets: [
+            { label: 'Media TX (Gbps)', backgroundColor: 'rgba(54,162,235,0.7)', data: mediasTX },
+            { label: 'Media RX (Gbps)', backgroundColor: 'rgba(255,99,132,0.7)', data: mediasRX }
+        ]
+    },
+    options: { responsive:true, scales: { y: { beginAtZero:true, title:{display:true,text:'Gbps'} } } }
+});
+// Gráficos por test
+for (let t of tests) {
+    // Generar un id seguro igual que en el template
+    let safeId = 'chart_' + t
+        .replace(/ /g,'_')
+        .replace(/[()\/.,:áéíóúüñÁÉÍÓÚÜÑ-]/g, function(m) {
+            const map = { 'á':'a','é':'e','í':'i','ó':'o','ú':'u','ü':'u','ñ':'n','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ü':'U','Ñ':'N','-':'','/':'_','(':'',')':'','.':'',',':'',':':'' };
+            return map[m] || '';
+        });
+    const canvas = document.getElementById(safeId);
+    if (!canvas) continue;
+    const ctx = canvas.getContext('2d');
+    const txs = reportNames.map(n => allResults[t][n][0] !== 'N/A' ? parseFloat(allResults[t][n][0]) : null);
+    const rxs = reportNames.map(n => allResults[t][n][1] !== 'N/A' ? parseFloat(allResults[t][n][1]) : null);
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: reportNames,
+            datasets: [
+                { label: 'TX (Gbps)', backgroundColor: 'rgba(54,162,235,0.7)', data: txs },
+                { label: 'RX (Gbps)', backgroundColor: 'rgba(255,99,132,0.7)', data: rxs }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive:true,
+            maintainAspectRatio: false,
+            scales: { x: { beginAtZero:true, title:{display:true,text:'Gbps'} } }
+        }
+    });
+}
+// Modal de detalles
+function showDetails(data) {
+    let html = `<b>Test:</b> ${data.test}<br><b>Ejecución:</b> ${data.exec}<br><b>TX:</b> ${data.tx}<br><b>RX:</b> ${data.rx}<br><b>Latencia:</b> ${data.latencia}<br><b>Pérdida UDP:</b> ${data.perdida}<br><b>Fecha:</b> ${data.fecha}`;
+    document.getElementById('modalContent').innerHTML = html;
+    document.getElementById('detailsModal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+function closeDetails() {
+    document.getElementById('detailsModal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+</script>
+</body>
+</html>
